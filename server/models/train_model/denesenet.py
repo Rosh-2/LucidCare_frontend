@@ -37,7 +37,7 @@ val_generator = val_datagen.flow_from_directory(
 )
 
 # --- 3. Load EfficientNetB0 ---
-base_model = EfficientNetB0(weights='imagenet', include_top=False, input_shape=(224,224,3))
+base_model = densenet121(weights='imagenet', include_top=False, input_shape=(224,224,3))
 
 # Freeze base model layers to speed up CPU training
 base_model.trainable = False

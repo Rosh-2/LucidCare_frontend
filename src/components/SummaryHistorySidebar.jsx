@@ -73,7 +73,7 @@ export default function SummaryHistorySidebar({ isOpen, onClose, onCompare, onVi
 
         setFetchStatus("loading");
         try {
-            const res = await fetch("http://localhost:5000/summaries", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/summaries`, {
                 headers: { token },
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);

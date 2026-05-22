@@ -464,17 +464,14 @@ class MedicalDiagnosticSystem:
             4. PLAIN TEXT ONLY. No markdown, no emojis, no bullet symbols.
             5. NO Numbered lists for section headers.
             6. Always end with a doctor's note.
+            7. ALL sections (Vitals and Lab Data, X-Ray Findings, Summary, Doctor's Note) are MANDATORY. Do NOT skip any section even if translating.
 
             REQUIRED OUTPUT FORMAT:
             {vitals_format}
             {'X-Ray Findings' + chr(10) + 'Condition: [Name]' + chr(10) + 'Location: [Location]' + chr(10) + 'Meaning: [Plain-language explanation]' + chr(10) if has_xray else ''}
             Summary
             {summary_instructions}
-            Tone rules:
-            - If findings are routine or mild: be calm, reassuring, and easy to understand.
-            - If findings are serious or critical (e.g. septic shock, respiratory failure): be clear and honest. Do NOT downplay.
-            - Always base every sentence strictly on the data. Do not invent findings.
-
+            
             Doctor's Note
             [One sentence. If critical: advise seeking immediate medical attention. If routine: advise consulting a doctor at the earliest convenience.]
 
@@ -517,9 +514,12 @@ class MedicalDiagnosticSystem:
         if target_language in ["ml", "Malayalam"]:
             lang_instruction = """
 - OUTPUT LANGUAGE RULE: You MUST output all textual fields ('summary', 'recommendation', 'note', 'metric', 'oldValue', 'newValue') in MALAYALAM (മലയാളം).
-- CRITICAL: Write in pure Malayalam script. Do not use Manglish.
-- CRITICAL: Do NOT translate the actual keys of the JSON object.
-- CRITICAL: Do NOT translate the strict enum values for 'verdict' ("deteriorated" | "improved" | "normal") or 'change' ("deteriorated" | "improved" | "stable").
+- CRITICAL: Numerical values (numbers) and units (e.g., g/dL, mg/dL, %) MUST be preserved EXACTLY as they appear in the original report. Do NOT translate numbers into Malayalam script.
+- CRITICAL: The overall 'verdict' MUST be determined using the same logical rules as the English version: 'improved' (പുരോഗതി), 'deteriorated' (സ്ഥിതി മോശമായി), or 'normal' (മാറ്റമില്ല/സ്ഥിരമാണ്).
+- CRITICAL: The Malayalam summary MUST explicitly state the direction of change (Improvement, Deterioration, or No Change) in alignment with the verdict.
+- CRITICAL: Write in pure Malayalam script for explanations. Do not use Manglish.
+- CRITICAL: Do NOT translate the actual JSON keys.
+- CRITICAL: Do NOT translate the enum strings used for 'verdict' and 'change' values in the JSON structure.
 """
         else:
             lang_instruction = """
@@ -549,15 +549,17 @@ Return ONLY valid JSON (no markdown, no code fences) in this exact structure:
 }}
 
 Rules:
-- OVERALL VERDICT RULE: If ANY key metric in the Comparison Target has worsened or gone further out of the normal range relative to the Baseline Report, or if a new negative condition has appeared, the overall verdict MUST be "deteriorated".
-- You may only use "improved" for the overall verdict if key metrics have gotten closer to the normal range relative to the Baseline Report and no other metrics have worsened.
-- You may only use "normal" (stable) for the overall verdict if there is no significant change in either direction relative to the Baseline Report.
-- HIGHLIGHT CHANGE RULE: For each individual metric in the highlights array, you MUST correctly evaluate its specific "change". If the value in the Comparison Target moved closer to the healthy/normal range relative to the Baseline Report, label it "improved". If it moved further away from the healthy/normal range or worsened, label it "deteriorated". NEVER default all metrics to "improved".
-- Extract up to 6 key metrics from the reports (e.g. specific lab values, findings, conditions).
-- If a metric cannot be compared, omit it from highlights.
-- Be concise. No markdown in any string value.
-- confidence reflects how certain you are based on evidence strength.
-- Tone must always be calm, encouraging, and non-alarming — even when health has deteriorated (e.g. use "Slightly worsened" instead of "Dangerously dropped").
+- OVERALL VERDICT LOGIC:
+    - Label as "improved" if a previously detected condition (e.g., Tuberculosis, Pneumonia, COVID-19) is now "Normal" or is no longer present, OR if lab values have moved significantly closer to the healthy range.
+    - Label as "deteriorated" if a new condition has appeared that was not in the baseline, or if lab values have worsened significantly.
+    - Label as "normal" (stable) ONLY if both reports show the same status (e.g., both are Normal or both show the same stable condition).
+- CLINICAL HIERARCHY: "Normal" is a better state than any disease. Moving from "Tuberculosis" (Baseline) to "Normal" (Target) is a **Major Improvement**, NOT "No Significance".
+- CROSS-LANGUAGE CONSISTENCY: You MUST compare the clinical findings regardless of the language. Translate "Normal" (English) and "സാധാരണ നില" (Malayalam) as the same status.
+- CONSISTENCY RULE: The overall "verdict" MUST align with the individual "change" labels.
+- SIGNIFICANCE RULE: Ignore minor fluctuations, but DO NOT ignore the resolution or appearance of a lung condition.
+- HIGHLIGHT CHANGE RULE: Specifically check the "Condition" field in both reports.
+- Extract up to 6 key metrics from the reports.
+- Tone must always be calm and supportive.
 {lang_instruction}
 """
 

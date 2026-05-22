@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 Flask
 python-dotenv
 flask-cors
@@ -11,7 +12,8 @@ torch
 torchvision
 groq
 PyPDF2
-opencv-python
+opencv-python-headless
 numpy
 Pillow
 pymupdf
+gunicorn
