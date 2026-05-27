@@ -1,0 +1,18 @@
+# Ignore Python backend and server folder
+server/
+venv/
+.venv/
+requirements.txt
+all_packages.txt
+
+# Ignore documentation/reports
+*.pdf
+*.pptx
+Final Review Phase 2(1).pptx
+Final_Project_Report.pdf
+
+# Ignore test images
+*.png
+temp_test_xray_annotated.png
+dummy.png
+dummy_annotated.png
